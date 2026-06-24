@@ -1,5 +1,15 @@
 langchain
-langchain-openai
+langchain-core
+langchain-community
 langchain-google-genai
+langchain-openai
+langchain-huggingface
+langchain-text-splitters
+langchain-cohere
 python-dotenv
+langsmith
+pypdf
+transformers
+sentence-transformers
+faiss-cpu
 streamlit

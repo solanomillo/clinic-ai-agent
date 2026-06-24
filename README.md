@@ -1,4 +1,4 @@
-# Smart Clinic AI Agent
+# Clinic AI Agent
 
 Agente inteligente basado en IA Generativa y RAG para responder consultas sobre documentación clínica.
 
