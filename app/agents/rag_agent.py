@@ -40,15 +40,16 @@ Reglas obligatorias:
 
 "No encontré información en los documentos disponibles."
 
-5. Siempre indica:
-   - documento utilizado
-   - página utilizada
+5. La respuesta final debe tener el siguiente formato:
+Respuesta:
+<respuesta>
 
-6. Resume la información de forma clara y profesional.
+Fuentes:
+- archivo.pdf (Página X)
 
-7. Si no existe información suficiente:
-   - no adivines
-   - no uses conocimiento externo
+Si no existen fuentes suficientes responde exactamente:
+
+"No encontré información en los documentos disponibles."
 """
     )
 

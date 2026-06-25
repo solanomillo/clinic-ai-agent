@@ -35,6 +35,19 @@ def crear_retrieval_tool(retriever):
         documentos = retriever.invoke(
             consulta
         )
+        
+        MIN_DOCUMENTS = 2
+
+        if len(documentos) < MIN_DOCUMENTS:
+
+            logger.warning(
+                "Contexto insuficiente para responder."
+            )
+
+            return (
+                "No se encontró suficiente "
+                "información en los documentos."
+            )
 
         if not documentos:
             return (
@@ -43,6 +56,7 @@ def crear_retrieval_tool(retriever):
             )
 
         contexto = []
+        fuentes = []
 
         for doc in documentos:
 
@@ -56,18 +70,28 @@ def crear_retrieval_tool(retriever):
                 "N/A"
             )
 
-            contexto.append(
-                f"""
-Documento: {source}
-Página: {page}
-
-Contenido:
-{doc.page_content}
-"""
+            fuentes.append(
+                f"{source} (Página {page})"
             )
 
-        return "\n\n".join(
-            contexto
-        )
+            contexto.append(
+                f"""
+        Documento: {source}
+        Página: {page}
+
+        Contenido:
+        {doc.page_content}
+        """
+            )
+
+        return f"""
+        CONTEXTO:
+
+        {chr(10).join(contexto)}
+
+        FUENTES:
+
+        {chr(10).join(set(fuentes))}
+        """
 
     return buscar_documentacion
