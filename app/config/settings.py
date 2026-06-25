@@ -112,6 +112,12 @@ class Settings:
     RETRIEVER_FETCH_K: int = 20
 
     RETRIEVER_LAMBDA_MULT: float = 0.3
+    
+    # =========================
+    # OCR
+    # =========================
+
+    OCR_LANGUAGE: str = "spa"
 
 
 settings = Settings()
