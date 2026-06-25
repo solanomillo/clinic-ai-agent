@@ -118,6 +118,14 @@ class Settings:
     # =========================
 
     OCR_LANGUAGE: str = "spa"
+    
+    # ==========================================
+    # Semantic Search
+    # ==========================================
+
+    SEMANTIC_SEARCH_K: int = 8
+    
+    SEMANTIC_SCORE_THRESHOLD: float = 0.60
 
 
 settings = Settings()
