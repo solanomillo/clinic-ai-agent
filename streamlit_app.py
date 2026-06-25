@@ -1,10 +1,29 @@
 import streamlit as st
 from datetime import datetime
 import time
-from app.config import settings
+import logging
+from app.config.settings import settings
 from app.services.rag_service import (
     inicializar_rag
 )
+from app.core.logging_config import (
+    configurar_logging
+)
+from app.config.validator import (
+    validar_configuracion
+)
+from app.services.query_service import (  # <-- NUEVO IMPORT
+    ejecutar_consulta
+)
+from app.core.exceptions import (  # <-- NUEVO IMPORT
+    RateLimitError,
+    LLMError
+)
+
+# Configuración de logging y validación
+configurar_logging()
+logger = logging.getLogger(__name__)
+validar_configuracion()
 
 # Configuración de la página
 st.set_page_config(
@@ -142,6 +161,7 @@ if "feedback_given" not in st.session_state:
 
 @st.cache_resource
 def cargar_rag():
+    logger.info("Inicializando el sistema RAG...")
     with st.spinner("🔄 Inicializando el sistema RAG..."):
         return inicializar_rag()
 
@@ -276,6 +296,8 @@ with st.container():
 
 # Procesar la pregunta
 if pregunta:
+    logger.info(f"Nueva pregunta recibida: {pregunta[:50]}...")
+    
     # Agregar pregunta al historial
     st.session_state.messages.append({"role": "user", "content": pregunta})
     st.session_state.total_questions += 1
@@ -291,22 +313,75 @@ if pregunta:
             time.sleep(0.5)
             
             try:
-                respuesta = rag_chain.invoke(pregunta)
-                st.markdown(f'<div class="assistant-message">{respuesta}</div>', unsafe_allow_html=True)
+                # <-- CÓDIGO MODIFICADO: Usando ejecutar_consulta en lugar de rag_chain.invoke directamente
+                respuesta = ejecutar_consulta(
+                    rag_chain,
+                    pregunta
+                )
                 
-                # Guardar respuesta en el historial
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": respuesta,
-                    "feedback": False
-                })
-            except Exception as e:
-                st.error(f"❌ Error al procesar la consulta: {str(e)}")
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": f"Lo siento, hubo un error al procesar tu consulta. Por favor, intenta de nuevo.",
-                    "feedback": False
-                })
+                st.markdown(
+                    f'<div class="assistant-message">{respuesta}</div>',
+                    unsafe_allow_html=True
+                )
+                
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": respuesta,
+                        "feedback": False
+                    }
+                )
+                logger.info("Respuesta generada exitosamente")
+                
+            except RateLimitError:  # <-- EXCEPCIÓN ESPECÍFICA
+                st.warning(
+                    """
+                    ⚠️ El servicio de IA alcanzó
+                    temporalmente su límite de uso.
+                    
+                    Intenta nuevamente en unos minutos.
+                    """
+                )
+                # Guardar mensaje de error en el historial
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "⚠️ El servicio de IA alcanzó temporalmente su límite de uso. Intenta nuevamente en unos minutos.",
+                        "feedback": False
+                    }
+                )
+                
+            except LLMError:  # <-- EXCEPCIÓN ESPECÍFICA
+                st.error(
+                    """
+                    ❌ Ocurrió un problema al
+                    procesar tu consulta.
+                    """
+                )
+                # Guardar mensaje de error en el historial
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "❌ Ocurrió un problema al procesar tu consulta. Por favor, intenta de nuevo.",
+                        "feedback": False
+                    }
+                )
+                
+            except Exception as e:  # <-- EXCEPCIÓN GENÉRICA (catch-all)
+                logger.error(f"Error inesperado: {str(e)}", exc_info=True)
+                st.error(
+                    """
+                    ❌ Error inesperado.
+                    """
+                )
+                # Guardar mensaje de error en el historial
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "❌ Error inesperado. Por favor, intenta de nuevo o contacta al soporte.",
+                        "feedback": False
+                    }
+                )
     
     st.rerun()
 

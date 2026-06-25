@@ -1,0 +1,18 @@
+"""
+Configuración centralizada de logs.
+"""
+
+import logging
+
+
+def configurar_logging() -> None:
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format=(
+            "%(asctime)s | "
+            "%(levelname)s | "
+            "%(name)s | "
+            "%(message)s"
+        ),
+    )
