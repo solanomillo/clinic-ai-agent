@@ -1,5 +1,17 @@
-from app.models.cohere_model import obtener_llm_cohere
+from app.services.rag_service import inicializar_rag
 
-llm = obtener_llm_cohere()
 
-print(llm)
+agent = inicializar_rag()
+
+respuesta = agent.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "¿Qué dice el documento sobre cancelar un turno?"
+            }
+        ]
+    }
+)
+
+print(respuesta)
