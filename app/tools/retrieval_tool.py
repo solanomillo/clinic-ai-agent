@@ -1,97 +1,122 @@
 """
 retrieval_tool.py
 
-Tool encargada de recuperar contexto
-desde el vector store.
+Responsabilidad:
+    Recuperar contexto desde el índice vectorial
+    utilizando búsqueda semántica con score.
 """
+
+from __future__ import annotations
 
 import logging
 
 from langchain.tools import tool
 
+from app.config.settings import settings
+
 logger = logging.getLogger(__name__)
 
 
-def crear_retrieval_tool(retriever):
+def crear_retrieval_tool(vectorstore):
     """
-    Construye una herramienta de recuperación
-    para ser utilizada por el agente.
+    Construye la herramienta utilizada por el agente
+    para recuperar información desde FAISS.
     """
 
     @tool
     def buscar_documentacion(
-        consulta: str
+        consulta: str,
     ) -> str:
         """
-        Busca información relevante
-        en la base documental.
+        Recupera contexto utilizando búsqueda semántica.
         """
 
         logger.info(
-            "Buscando contexto para: %s",
-            consulta
+            "Consulta recibida: %s",
+            consulta,
         )
 
-        documentos = retriever.invoke(
-            consulta
+        resultados = (
+            vectorstore.similarity_search_with_score(
+                query=consulta,
+                k=settings.SEMANTIC_SEARCH_K,
+            )
         )
-        
-        MIN_DOCUMENTS = 2
 
-        if len(documentos) < MIN_DOCUMENTS:
+        if not resultados:
 
             logger.warning(
-                "Contexto insuficiente para responder."
+                "No se encontraron documentos."
             )
 
             return (
-                "No se encontró suficiente "
-                "información en los documentos."
+                "No encontré información en los documentos disponibles."
             )
 
-        if not documentos:
-            return (
-                "No se encontró información "
-                "en los documentos."
-            )
-
-        contexto = []
+        documentos_validos = []
         fuentes = []
 
-        for doc in documentos:
+        mejor_distancia = resultados[0][1]
 
-            source = doc.metadata.get(
-                "document_name",
-                "desconocido"
+        for documento, distancia in resultados:
+
+            logger.info(
+                "Documento=%s | Distancia=%.4f",
+                documento.metadata.get(
+                    "document_name",
+                    "desconocido",
+                ),
+                distancia,
             )
 
-            page = doc.metadata.get(
-                "page",
-                "N/A"
+            if distancia > settings.SEMANTIC_SCORE_THRESHOLD:
+                continue
+
+            documentos_validos.append(documento)
+
+            fuente = (
+                f"{documento.metadata.get('document_name', 'desconocido')} "
+                f"(Página {documento.metadata.get('page', 'N/A')})"
             )
 
-            fuentes.append(
-                f"{source} (Página {page})"
+            fuentes.append(fuente)
+
+        if not documentos_validos:
+
+            logger.warning(
+                "Todos los documentos fueron descartados por el umbral."
             )
 
-            contexto.append(
-                f"""
-        Documento: {source}
-        Página: {page}
-
-        Contenido:
-        {doc.page_content}
-        """
+            return (
+                "No encontré información en los documentos disponibles."
             )
 
-        return f"""
-        CONTEXTO:
+        confianza = max(
+            0.0,
+            1 - mejor_distancia,
+        )
 
-        {chr(10).join(contexto)}
+        logger.info(
+            "Confianza calculada: %.2f",
+            confianza,
+        )
 
-        FUENTES:
+        contexto = "\n\n".join(
+            [
+                (
+                    f"Documento: {doc.metadata.get('document_name','desconocido')}\n"
+                    f"Página: {doc.metadata.get('page','N/A')}\n\n"
+                    f"{doc.page_content}"
+                )
+                for doc in documentos_validos
+            ]
+        )
 
-        {chr(10).join(set(fuentes))}
-        """
+        return (
+            f"Confianza: {confianza:.2f}\n\n"
+            f"Contexto:\n\n{contexto}\n\n"
+            f"Fuentes:\n"
+            + "\n".join(sorted(set(fuentes)))
+        )
 
     return buscar_documentacion
