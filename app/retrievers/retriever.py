@@ -1,70 +1,14 @@
-"""
-retriever.py
-
-Responsabilidad:
-    Crear el retriever utilizado
-    para recuperar contexto desde FAISS.
-"""
-
-import logging
-
-from app.config.settings import (
-    settings
-)
-
-logger = logging.getLogger(__name__)
-
-
 def crear_retriever(
     vectorstore
 ):
-    """
-    Construye un retriever basado
-    en FAISS.
 
-    Args:
-        vectorstore:
-            Índice vectorial FAISS.
+    retriever = vectorstore.as_retriever(        
+        search_type="mmr",  # MMR 
+        search_kwargs={
+            "k": 8,  # Recuperar 8 documentos
+            "fetch_k": 20,  # Considerar 20 para diversificar
+            "lambda_mult": 0.3  # Más diversidad (0 = máxima diversidad)
+        }
+    )
 
-    Returns:
-        Retriever configurado.
-    """
-
-    try:
-
-        logger.info(
-            "Creando retriever (%s)",
-            settings.RETRIEVER_SEARCH_TYPE
-        )
-
-        retriever = (
-            vectorstore.as_retriever(
-                search_type=
-                settings.RETRIEVER_SEARCH_TYPE,
-
-                search_kwargs={
-                    "k":
-                        settings.RETRIEVER_K,
-
-                    "fetch_k":
-                        settings.RETRIEVER_FETCH_K,
-
-                    "lambda_mult":
-                        settings.RETRIEVER_LAMBDA_MULT
-                }
-            )
-        )
-
-        logger.info(
-            "Retriever creado correctamente."
-        )
-
-        return retriever
-
-    except Exception as error:
-
-        logger.exception(
-            "Error al crear retriever."
-        )
-
-        raise
+    return retriever
