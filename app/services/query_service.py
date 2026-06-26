@@ -2,87 +2,114 @@
 query_service.py
 
 Responsabilidad:
-    Ejecutar consultas al agente RAG y devolver
-    una respuesta estructurada para la interfaz.
+    Ejecutar consultas contra el pipeline RAG.
+
+Incluye:
+    - Retry automático.
+    - Manejo de errores.
+    - Rate Limit.
+    - Logging.
 """
 
-from __future__ import annotations
-
 import logging
-from typing import Any
+import time
+
+from app.config.settings import settings
 
 from app.core.exceptions import (
-    RateLimitError,
+    LLMError,
+    RateLimitError
 )
 
 logger = logging.getLogger(__name__)
 
 
 def ejecutar_consulta(
-    agent: Any,
-    pregunta: str,
+    rag_chain,
+    pregunta: str
 ) -> str:
     """
-    Ejecuta una consulta sobre el agente.
+    Ejecuta una consulta utilizando
+    el pipeline RAG.
 
     Args:
-        agent:
-            Instancia del agente RAG.
+        rag_chain:
+            Cadena principal RAG.
 
         pregunta:
-            Consulta realizada por el usuario.
+            Consulta del usuario.
 
     Returns:
-        Respuesta generada por el agente.
-
-    Raises:
-        RateLimitError:
-            Cuando el proveedor del modelo alcanza
-            el límite de solicitudes.
+        str
     """
 
-    logger.info(
-        "Procesando consulta: %s",
-        pregunta,
-    )
+    ultimo_error = None
 
-    try:
+    for intento in range(
+        1,
+        settings.MAX_RETRIES + 1
+    ):
 
-        resultado = agent.invoke(
-            {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": pregunta,
-                    }
-                ]
-            }
-        )
+        try:
 
-        respuesta = (
-            resultado["messages"][-1].content
-        )
-
-        logger.info(
-            "Consulta procesada correctamente."
-        )
-
-        return respuesta
-
-    except Exception as error:
-
-        if "429" in str(error):
-
-            logger.warning(
-                "Rate limit alcanzado."
+            logger.info(
+                "Consulta recibida: %s",
+                pregunta
             )
 
-            raise RateLimitError(
-                "El proveedor alcanzó el límite de solicitudes."
-            ) from error
+            respuesta = rag_chain.invoke(
+                pregunta
+            )
 
-        logger.exception(
-            "Error ejecutando la consulta."
-        )
+            logger.info(
+                "Consulta completada."
+            )
 
-        raise
+            return respuesta
+
+        except Exception as error:
+
+            ultimo_error = error
+
+            mensaje = str(error).lower()
+
+            logger.exception(
+                "Error durante consulta."
+            )
+
+            # ---------------------------------
+            # Rate Limit
+            # ---------------------------------
+
+            if (
+                "429" in mensaje
+                or
+                "resource_exhausted"
+                in mensaje
+                or
+                "rate limit"
+                in mensaje
+            ):
+                raise RateLimitError(
+                    "Límite de uso alcanzado."
+                ) from error
+
+            # ---------------------------------
+            # Retry
+            # ---------------------------------
+
+            if intento < settings.MAX_RETRIES:
+
+                logger.warning(
+                    "Reintentando (%s/%s)...",
+                    intento,
+                    settings.MAX_RETRIES
+                )
+
+                time.sleep(
+                    settings.RETRY_DELAY_SECONDS
+                )
+
+    raise LLMError(
+        "No fue posible completar la consulta."
+    ) from ultimo_error
