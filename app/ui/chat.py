@@ -21,9 +21,6 @@ from app.ui.session import (
     obtener_historial,
     agregar_mensaje,
 )
-from app.services.query_service import (
-    ejecutar_consulta,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -71,33 +68,28 @@ def procesar_consulta(
 
                 agent = obtener_agente()
 
-                respuesta = ejecutar_consulta(
-                    agent=agent,
-                    pregunta=consulta,
+                respuesta = agent.invoke(
+                    {
+                        "messages": [
+                            {
+                                "role": "user",
+                                "content": consulta,
+                            }
+                        ]
+                    }
+                )
+
+                contenido = (
+                    respuesta["messages"][-1].content
                 )
 
                 placeholder.markdown(
-                    respuesta.answer
+                    contenido
                 )
-
-                # Mejora profesional: mostrar fuentes y confianza
-                if respuesta.sources:
-
-                    st.caption("📄 Fuentes")
-
-                    for fuente in respuesta.sources:
-
-                        st.write(f"• {fuente}")
-
-                if respuesta.confidence is not None:
-
-                    st.caption(
-                        f"🎯 Confianza: {respuesta.confidence:.2f}"
-                    )
 
                 agregar_mensaje(
                     "assistant",
-                    respuesta.answer
+                    contenido
                 )
 
         except RateLimitError:
