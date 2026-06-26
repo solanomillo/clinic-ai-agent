@@ -13,6 +13,3 @@ transformers
 sentence-transformers
 faiss-cpu
 streamlit
-pytesseract
-pdf2image
-pillow
