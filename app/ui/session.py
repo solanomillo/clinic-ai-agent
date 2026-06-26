@@ -18,24 +18,6 @@ from app.services.rag_service import (
 logger = logging.getLogger(__name__)
 
 
-@st.cache_resource(
-    show_spinner="Inicializando agente RAG..."
-)
-def cargar_agente():
-    """
-    Crea el agente RAG una única vez.
-
-    Streamlit reutilizará esta instancia
-    entre las ejecuciones del script.
-    """
-
-    logger.info(
-        "Creando agente RAG..."
-    )
-
-    return inicializar_rag()
-
-
 def inicializar_sesion() -> None:
     """
     Inicializa las variables necesarias para la aplicación.
@@ -51,7 +33,7 @@ def inicializar_sesion() -> None:
         )
 
         st.session_state.agent = (
-            cargar_agente()
+            inicializar_rag()
         )
 
     if "messages" not in st.session_state:
