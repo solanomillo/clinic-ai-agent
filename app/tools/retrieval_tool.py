@@ -1,56 +1,75 @@
 """
-retrieval_tool.py
+rag_service.py
 
-Tool encargada de recuperar contexto
-desde el vector store.
+Responsabilidad:
+    Inicializar el agente RAG y ensamblar
+    todos los componentes del sistema.
 """
 
 from __future__ import annotations
 
 import logging
 
-from langchain.tools import tool
-
-from app.services.semantic_search_service import (
-    buscar_contexto,
+from app.agents.rag_agent import (
+    crear_rag_agent,
+)
+from app.models.gemini import (
+    cargar_llm,
+)
+from app.services.vectorstore_service import (
+    inicializar_vectorstore,
+)
+from app.tools.retrieval_tool import (
+    crear_retrieval_tool,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def crear_retrieval_tool(vectorstore):
+def inicializar_rag():
     """
-    Construye la herramienta utilizada por el agente.
+    Inicializa todos los componentes del
+    sistema RAG.
+
+    Returns:
+        Agente completamente configurado.
     """
 
-    @tool
-    def buscar_documentacion(
-        consulta: str,
-    ) -> str:
-        """
-        Busca información relevante
-        dentro de la base documental.
-        """
+    logger.info(
+        "Inicializando sistema RAG..."
+    )
 
-        resultado = buscar_contexto(
-            vectorstore,
-            consulta,
-        )
+    # --------------------------------------------------
+    # Vector Store
+    # --------------------------------------------------
 
-        if not resultado.documents:
+    vectorstore = inicializar_vectorstore()
 
-            return (
-                "No encontré información en los documentos disponibles."
-            )
+    # --------------------------------------------------
+    # Tool de recuperación
+    # --------------------------------------------------
 
-        return f"""
-        CONTEXTO
+    retrieval_tool = crear_retrieval_tool(
+        vectorstore
+    )
 
-        {resultado.context}
+    # --------------------------------------------------
+    # Modelo LLM
+    # --------------------------------------------------
 
-        FUENTES
+    llm = cargar_llm()
 
-        {chr(10).join(resultado.sources)}
-        """
+    # --------------------------------------------------
+    # Agente
+    # --------------------------------------------------
 
-    return buscar_documentacion
+    agent = crear_rag_agent(
+        llm=llm,
+        retrieval_tool=retrieval_tool,
+    )
+
+    logger.info(
+        "Sistema RAG inicializado correctamente."
+    )
+
+    return agent
