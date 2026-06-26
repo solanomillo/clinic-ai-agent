@@ -1,12 +1,3 @@
-"""
-rag_service.py
-
-Responsabilidad:
-    Inicializar el agente RAG.
-"""
-
-import logging
-
 from app.services.vectorstore_service import (
     inicializar_vectorstore
 )
@@ -19,25 +10,20 @@ from app.models.gemini import (
     cargar_llm
 )
 
-from app.tools.retrieval_tool import (
-    crear_retrieval_tool
+from app.models.cohere_model import (
+    obtener_llm_cohere
+) 
+
+from app.chains.query_rewriter import (
+    crear_query_rewriter
 )
 
-from app.agents.rag_agent import (
-    crear_rag_agent
+from app.chains.rag_chain import (
+    crear_rag_chain
 )
-
-logger = logging.getLogger(__name__)
 
 
 def inicializar_rag():
-    """
-    Inicializa el agente RAG completo.
-    """
-
-    logger.info(
-        "Inicializando Agentic RAG."
-    )
 
     vectorstore = (
         inicializar_vectorstore()
@@ -47,21 +33,17 @@ def inicializar_rag():
         vectorstore
     )
 
-    retrieval_tool = (
-        crear_retrieval_tool(
-            retriever
-        )
-    )
-
     llm = cargar_llm()
+    llm_cohere = obtener_llm_cohere()
 
-    agent = crear_rag_agent(
-        llm=llm,
-        retrieval_tool=retrieval_tool
+    rewriter = crear_query_rewriter(
+        llm_cohere
     )
 
-    logger.info(
-        "Agentic RAG inicializado correctamente."
+    rag_chain = crear_rag_chain(
+        rewriter,
+        retriever,
+        llm
     )
 
-    return agent
+    return rag_chain
