@@ -32,6 +32,9 @@ from app.vectorstores.faiss_store import (
     crear_vectorstore,
     guardar_vectorstore,
 )
+from app.processing.metadata import (
+    enriquecer_metadata,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +57,16 @@ def construir_vectorstore():
     documentos = limpiar_documentos(
         documentos
     )
+    
+    logger.info(
+    "Enriching document metadata."
+    )
+
+    documentos = enriquecer_metadata(
+        documentos
+    )
+    
+    print(documentos[0].metadata)
 
     logger.info("Generating document chunks.")
 
