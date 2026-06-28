@@ -12,7 +12,6 @@ from app.prompts.rag_prompt import (
 
 
 def crear_rag_chain(
-    rewriter,
     retriever,
     llm
 ):
@@ -20,7 +19,7 @@ def crear_rag_chain(
     chain = (
         {
             "contexto":
-                rewriter | retriever,
+                retriever,
 
             "query":
                 RunnablePassthrough()
