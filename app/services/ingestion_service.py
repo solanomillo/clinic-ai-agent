@@ -7,10 +7,11 @@ Responsabilidad:
 
 Pipeline:
     1. Cargar documentos.
-    2. Generar chunks.
-    3. Cargar embeddings.
-    4. Crear VectorStore FAISS.
-    5. Guardar el índice en disco.
+    2. Limpiar documentos.
+    3. Generar chunks.
+    4. Cargar embeddings.
+    5. Crear VectorStore FAISS.
+    6. Guardar el índice en disco.
 """
 
 import logging
@@ -20,6 +21,9 @@ from app.loaders.pdf_loader import (
 )
 from app.processing.chunking import (
     crear_chunks,
+)
+from app.processing.cleaning import (
+    limpiar_documentos,
 )
 from app.processing.embeddings import (
     cargar_embeddings,
@@ -41,25 +45,37 @@ def construir_vectorstore():
         FAISS: Instancia del VectorStore creada.
     """
 
-    logger.info("Iniciando pipeline de ingesta de documentos.")
+    logger.info("Starting document ingestion pipeline.")
 
     documentos = cargar_documentos()
+
+    logger.info("Cleaning loaded documents.")
+
+    documentos = limpiar_documentos(
+        documentos
+    )
+
+    logger.info("Generating document chunks.")
 
     chunks = crear_chunks(
         documentos
     )
 
+    logger.info("Loading embedding model.")
+
     embeddings = cargar_embeddings()
+
+    logger.info("Creating FAISS vector store.")
 
     vectorstore = crear_vectorstore(
         chunks,
-        embeddings
+        embeddings,
     )
 
     guardar_vectorstore(
-        vectorstore
+        vectorstore,
     )
 
-    logger.info("Índice FAISS creado y almacenado correctamente.")
+    logger.info("FAISS vector store created successfully.")
 
     return vectorstore
