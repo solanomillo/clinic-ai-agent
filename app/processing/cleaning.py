@@ -2,14 +2,13 @@
 cleaning.py
 
 Responsabilidad:
-    Centralizar el proceso de limpieza de documentos antes de la
-    generación de chunks.
-
-    En esta primera versión la función actúa como un passthrough.
-    En los siguientes commits se incorporarán reglas de limpieza
-    como eliminación de encabezados, pies de página, espacios
-    duplicados y caracteres no deseados.
+    Limpiar y normalizar el contenido de los documentos antes de
+    generar los chunks para el índice vectorial.
 """
+
+from __future__ import annotations
+
+import re
 
 from langchain_core.documents import Document
 
@@ -18,17 +17,90 @@ def limpiar_documentos(
     documentos: list[Document],
 ) -> list[Document]:
     """
-    Ejecuta el pipeline de limpieza de documentos.
+    Limpia y normaliza una colección de documentos.
 
-    Actualmente no modifica el contenido y devuelve los documentos
-    originales. Se implementará progresivamente en los siguientes
-    commits.
+    Acciones realizadas:
+        - Elimina caracteres invisibles.
+        - Normaliza saltos de línea.
+        - Elimina espacios duplicados.
+        - Elimina líneas vacías.
+        - Elimina tabulaciones.
 
     Args:
         documentos: Lista de documentos cargados.
 
     Returns:
-        Lista de documentos lista para continuar con el pipeline.
+        Lista de documentos limpios.
     """
 
-    return documentos
+    documentos_limpios: list[Document] = []
+
+    for documento in documentos:
+
+        contenido = _limpiar_texto(
+            documento.page_content
+        )
+
+        documentos_limpios.append(
+            Document(
+                page_content=contenido,
+                metadata=documento.metadata.copy()
+            )
+        )
+
+    return documentos_limpios
+
+
+def _limpiar_texto(
+    texto: str,
+) -> str:
+    """
+    Aplica reglas básicas de limpieza al texto.
+
+    Args:
+        texto: Texto original.
+
+    Returns:
+        Texto limpio y normalizado.
+    """
+
+    # Eliminar caracteres invisibles frecuentes
+    texto = texto.replace("\ufeff", "")
+    texto = texto.replace("\u200b", "")
+    texto = texto.replace("\xa0", " ")
+
+    # Normalizar saltos de línea
+    texto = texto.replace("\r\n", "\n")
+    texto = texto.replace("\r", "\n")
+
+    # Reemplazar tabulaciones
+    texto = texto.replace("\t", " ")
+
+    # Eliminar espacios repetidos
+    texto = re.sub(
+        r"[ ]{2,}",
+        " ",
+        texto
+    )
+
+    # Eliminar líneas vacías repetidas
+    texto = re.sub(
+        r"\n{3,}",
+        "\n\n",
+        texto
+    )
+
+    # Eliminar espacios al inicio y final de cada línea
+    lineas = [
+        linea.strip()
+        for linea in texto.split("\n")
+    ]
+
+    # Eliminar líneas completamente vacías
+    lineas = [
+        linea
+        for linea in lineas
+        if linea
+    ]
+
+    return "\n".join(lineas).strip()
