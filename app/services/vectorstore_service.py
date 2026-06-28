@@ -1,54 +1,52 @@
-from app.loaders.pdf_loader import (
-    cargar_documentos
-)
+"""
+vectorstore_service.py
 
-from app.processing.chunking import (
-    crear_chunks
-)
+Responsabilidad:
+    Administrar la inicialización del índice vectorial.
+
+    Si el índice FAISS existe, se carga desde disco.
+    En caso contrario, se delega la construcción del índice
+    al servicio de ingesta.
+"""
+
+import logging
 
 from app.processing.embeddings import (
-    cargar_embeddings
+    cargar_embeddings,
+)
+from app.services.ingestion_service import (
+    construir_vectorstore,
+)
+from app.vectorstores.faiss_store import (
+    cargar_vectorstore,
+    existe_vectorstore,
 )
 
-from app.vectorstores.faiss_store import (
-    crear_vectorstore,
-    guardar_vectorstore,
-    cargar_vectorstore,
-    existe_vectorstore
-)
+logger = logging.getLogger(__name__)
 
 
 def inicializar_vectorstore():
+    """
+    Inicializa el VectorStore.
+
+    Returns:
+        FAISS: Instancia lista para realizar búsquedas semánticas.
+    """
 
     embeddings = cargar_embeddings()
 
     if existe_vectorstore():
 
-        print(
-            "Cargando índice FAISS..."
+        logger.info(
+            "Cargando índice FAISS existente."
         )
 
         return cargar_vectorstore(
             embeddings
         )
 
-    print(
-        "Creando índice FAISS..."
+    logger.info(
+        "No existe un índice FAISS. Se iniciará la construcción."
     )
 
-    documentos = cargar_documentos()
-
-    chunks = crear_chunks(
-        documentos
-    )
-
-    vectorstore = crear_vectorstore(
-        chunks,
-        embeddings
-    )
-
-    guardar_vectorstore(
-        vectorstore
-    )
-
-    return vectorstore
+    return construir_vectorstore()
