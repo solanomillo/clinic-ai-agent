@@ -6,7 +6,7 @@ from pathlib import Path
 root_dir = Path(__file__).parent
 sys.path.append(str(root_dir))
 
-from app.ui.pages import main
+from app.ui.pages.main import main
 
 if __name__ == "__main__":
-    main.main()
+    main()

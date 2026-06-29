@@ -9,6 +9,7 @@ Responsabilidad:
 import streamlit as st
 import time
 import logging
+import html
 
 from app.services.query_service import ejecutar_consulta
 from app.core.exceptions import RateLimitError, LLMError
@@ -31,9 +32,11 @@ def display_chat_history():
                 )
 
             else:
-
+                # Decodificar el HTML del mensaje del asistente
+                content_decoded = html.unescape(message["content"])
+                
                 st.markdown(
-                    f'<div class="assistant-message">{message["content"]}</div>',
+                    f'<div class="assistant-message">{content_decoded}</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -55,43 +58,30 @@ def display_chat_history():
                             )
 
                 # Feedback UI
-                if "feedback" not in message:
-
+                message_idx = st.session_state.messages.index(message)
+                message_id = f"msg_{message_idx}_{hash(message['content'])}"
+                feedback_key = f"feedback_{message_id}"
+                
+                if feedback_key not in st.session_state:
                     col1, col2, col3 = st.columns([0.1, 0.1, 0.8])
 
                     with col1:
-
-                        if st.button(
-                            "👍",
-                            key=f"like_{hash(message['content'])}",
-                        ):
-                            st.session_state.feedback_given[
-                                hash(message["content"])
-                            ] = "positive"
+                        if st.button("👍", key=f"like_{message_id}"):
+                            st.session_state[feedback_key] = "positive"
                             st.rerun()
 
                     with col2:
-
-                        if st.button(
-                            "👎",
-                            key=f"dislike_{hash(message['content'])}",
-                        ):
-                            st.session_state.feedback_given[
-                                hash(message["content"])
-                            ] = "negative"
+                        if st.button("👎", key=f"dislike_{message_id}"):
+                            st.session_state[feedback_key] = "negative"
                             st.rerun()
 
                     with col3:
-
-                        if hash(message["content"]) in st.session_state.feedback_given:
-
-                            feedback = st.session_state.feedback_given[
-                                hash(message["content"])
-                            ]
-
-                            st.caption(
-                                f"✅ Feedback: {'Positivo' if feedback == 'positive' else 'Negativo'}"
-                            )
+                        pass
+                else:
+                    feedback = st.session_state[feedback_key]
+                    st.caption(
+                        f"✅ Feedback: {'Positivo' if feedback == 'positive' else 'Negativo'}"
+                    )
 
 
 def handle_user_input(rag_chain):
@@ -142,8 +132,11 @@ def handle_user_input(rag_chain):
                     answer = result["answer"]
                     sources = result["sources"]
 
+                    # Decodificar el HTML de la respuesta
+                    answer_decoded = html.unescape(answer)
+
                     st.markdown(
-                        f'<div class="assistant-message">{answer}</div>',
+                        f'<div class="assistant-message">{answer_decoded}</div>',
                         unsafe_allow_html=True,
                     )
 
@@ -170,7 +163,6 @@ def handle_user_input(rag_chain):
                             "role": "assistant",
                             "content": answer,
                             "sources": sources,
-                            "feedback": False,
                         }
                     )
 
@@ -185,9 +177,8 @@ def handle_user_input(rag_chain):
                     st.session_state.messages.append(
                         {
                             "role": "assistant",
-                            "content": "⚠️ Servicio saturado.",
+                            "content": "⚠️ Servicio saturado. Intenta más tarde.",
                             "sources": [],
-                            "feedback": False,
                         }
                     )
 
@@ -200,9 +191,8 @@ def handle_user_input(rag_chain):
                     st.session_state.messages.append(
                         {
                             "role": "assistant",
-                            "content": "❌ Error en el modelo.",
+                            "content": "❌ Error en el modelo. Por favor, intenta nuevamente.",
                             "sources": [],
-                            "feedback": False,
                         }
                     )
 
@@ -221,9 +211,8 @@ def handle_user_input(rag_chain):
                     st.session_state.messages.append(
                         {
                             "role": "assistant",
-                            "content": "❌ Error interno.",
+                            "content": "❌ Error interno del sistema. Por favor, intenta más tarde.",
                             "sources": [],
-                            "feedback": False,
                         }
                     )
 

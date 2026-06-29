@@ -1,25 +1,35 @@
-# app/ui/components/footer.py
+"""
+footer.py
+
+Responsabilidad:
+    Renderizar el pie de página de la aplicación.
+"""
+
+from __future__ import annotations
+
 import streamlit as st
 
-def render_footer():
-    """Renderiza el footer de la aplicación"""
-    
-    st.markdown("""
-    <div class="footer">
-        <div style="display: flex; justify-content: center; gap: 2rem; align-items: center; flex-wrap: wrap;">
-            <span>🏥 <strong>Clínica AI</strong></span>
-            <span>•</span>
-            <span>🤖 <strong>Asistente Médico</strong></span>
-            <span>•</span>
-            <span>📚 <strong>RAG Architecture</strong></span>
-            <span>•</span>
-            <span>🔒 <strong>Datos Seguros</strong></span>
+
+def render_footer() -> None:
+    """
+    Renderiza el pie de página de la aplicación.
+    """
+
+    st.html(
+        """
+        <div class="footer">
+            <strong>Clinic AI Agent</strong>
+            <br>
+            Asistente inteligente para consultas institucionales
+            basado en <strong>Retrieval-Augmented Generation (RAG)</strong>.
+            <br><br>
+            <strong>Tecnologías</strong>
+            <br>
+            Streamlit • LangChain • FAISS • Google Gemini • HuggingFace
+            <br><br>
+            <span style="font-size:0.8rem; color:#95a5a6;">
+                Versión 1.0.0
+            </span>
         </div>
-        <div style="margin-top: 0.75rem; font-size: 0.85rem;">
-            <span>❤️ Desarrollado para brindar información médica confiable</span>
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #95a5a6;">
-            <span>⚠️ Esta herramienta es informativa. Consulta siempre a tu médico.</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """
+    )
