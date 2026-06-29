@@ -1,22 +1,23 @@
 from transformers import AutoTokenizer
 
 from langchain_text_splitters import (
-    CharacterTextSplitter
+    RecursiveCharacterTextSplitter
 )
+from app.config.settings import settings
 
 
 def crear_chunks(documentos):
 
     tokenizer = AutoTokenizer.from_pretrained(
-        "BAAI/bge-m3" # BAAI/bge-m3 para produccion
+        settings.CHUNKS_MODEL_TOKENIZER
     )
 
     splitter = (
-        CharacterTextSplitter
+        RecursiveCharacterTextSplitter
         .from_huggingface_tokenizer(
             tokenizer=tokenizer,
-            chunk_size=1250,
-            chunk_overlap=150
+            chunk_size=settings.CHUNK_SIZE,
+            chunk_overlap=settings.CHUNK_OVERLAP
         )
     )
 

@@ -10,7 +10,9 @@ from langchain_community.document_loaders import (
     DirectoryLoader,
     PyPDFLoader,
 )
-
+from app.config.settings import (
+    settings
+)
 
 def cargar_documentos():
     """
@@ -22,7 +24,7 @@ def cargar_documentos():
     """
 
     loader = DirectoryLoader(
-        path="./data/documentos",
+        path=settings.DOCUMENTS_PATH,
         glob="**/*.pdf",
         loader_cls=PyPDFLoader,
     )

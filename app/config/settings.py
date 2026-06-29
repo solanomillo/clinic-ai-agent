@@ -30,10 +30,7 @@ class Settings:
     GEMINI_API_KEY: str | None = os.getenv(
         "GEMINI_API_KEY"
     )
-
-    COHERE_API_KEY: str | None = os.getenv(
-        "COHERE_API_KEY"
-    )
+    
 
     LANGSMITH_API_KEY: str | None = os.getenv(
         "LANGSMITH_API_KEY"
@@ -59,19 +56,23 @@ class Settings:
         "gemini-2.5-flash"
     )
 
-    COHERE_MODEL: str = (
-        "command-a-plus-05-2026"
-    )
-
     TEMPERATURE: float = 0.0
 
     # =========================
     # EMBEDDINGS
     # =========================
 
-    EMBEDDING_MODEL: str = (
+    CHUNKS_MODEL_TOKENIZER: str = (
         "BAAI/bge-m3"
     )
+    EMBEDDING_MODEL_UNO: str = (
+        "BAAI/bge-m3"
+    )
+    EMBEDDING_MODEL_DOS: str = (
+        "all-MiniLM-L6-v2" #prueba local
+    )
+    
+    
 
     # =========================
     # CHUNKING
@@ -101,5 +102,15 @@ class Settings:
 
     RETRY_DELAY_SECONDS: int = 5
 
-
+    # =========================
+    # RETRIEVER
+    # =========================
+    
+    RETRIEVER_SEARCH_TYPE='mmr'
+    RETRIEVER_K=3
+    RETRIEVER_FETCH_K=15
+    RETRIEVER_LAMBDA_MULT=0.3
+    
+    
+    
 settings = Settings()

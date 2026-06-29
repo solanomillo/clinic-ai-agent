@@ -20,7 +20,6 @@ def validar_configuracion() -> None:
 
     configuraciones_requeridas = {
         "GEMINI_API_KEY": settings.GEMINI_API_KEY,
-        "COHERE_API_KEY": settings.COHERE_API_KEY,
     }
 
     faltantes = [

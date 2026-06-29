@@ -3,9 +3,10 @@ import os
 from langchain_community.vectorstores import (
     FAISS
 )
+from app.config.settings import settings
 
 
-FAISS_PATH = "vector_db/faiss_index"
+FAISS_PATH = settings.VECTOR_DB_PATH
 
 
 def crear_vectorstore(

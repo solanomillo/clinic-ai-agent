@@ -48,47 +48,29 @@ def construir_vectorstore():
         FAISS: Instancia del VectorStore creada.
     """
 
-    logger.info("Starting document ingestion pipeline.")
+    logger.info("Iniciando el proceso de ingesta de documentos.")
 
     documentos = cargar_documentos()
+    logger.info("Se cargaron %d documentos.", len(documentos))
 
-    logger.info("Cleaning loaded documents.")
+    documentos = limpiar_documentos(documentos)
+    logger.info("Limpieza de documentos completada.")
 
-    documentos = limpiar_documentos(
-        documentos
-    )
-    
-    logger.info(
-    "Enriching document metadata."
-    )
+    documentos = enriquecer_metadata(documentos)
+    logger.info("Metadatos enriquecidos correctamente.")
 
-    documentos = enriquecer_metadata(
-        documentos
-    )
-    
-    print(documentos[0].metadata)
+    chunks = crear_chunks(documentos)
+    logger.info("Se generaron %d fragmentos (chunks).", len(chunks))
 
-    logger.info("Generating document chunks.")
-
-    chunks = crear_chunks(
-        documentos
-    )
-
-    logger.info("Loading embedding model.")
-
+    logger.info("Cargando el modelo de embeddings.")
     embeddings = cargar_embeddings()
 
-    logger.info("Creating FAISS vector store.")
+    logger.info("Creando el índice vectorial FAISS.")
+    vectorstore = crear_vectorstore(chunks, embeddings)
 
-    vectorstore = crear_vectorstore(
-        chunks,
-        embeddings,
-    )
+    logger.info("Guardando el índice vectorial en disco.")
+    guardar_vectorstore(vectorstore)
 
-    guardar_vectorstore(
-        vectorstore,
-    )
-
-    logger.info("FAISS vector store created successfully.")
+    logger.info("Proceso de ingesta finalizado correctamente.")
 
     return vectorstore
